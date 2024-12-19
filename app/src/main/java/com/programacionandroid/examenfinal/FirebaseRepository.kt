@@ -1,14 +1,26 @@
 package com.programacionandroid.examenfinal
 
+import com.google.firebase.firestore.FirebaseFirestore
+import kotlinx.coroutines.tasks.await
+
 class FirebaseRepository {
-    // Method to read data from Firebase Firestore
-    fun getItems(): List<Item> {
-        // TODO: Implementar logica para leer datos de Firestore
-        return emptyList()
+    private val firestore = FirebaseFirestore.getInstance()
+    private val collectionName = "Item"
+
+    suspend fun getItems(): List<Item> {
+        return try {
+            val snapshot = firestore.collection(collectionName).get().await()
+            snapshot.documents.mapNotNull { it.toObject(Item::class.java) }
+        } catch (e: Exception) {
+            e.printStackTrace()
+            emptyList()
+        }
     }
 
-    // Method to add a new item to Firebase Firestore
-    fun addItem(item: Item) {
-        // TODO: Implementar logica para agregar un nuevo item a Firestore
+    fun addItem(item: Item, onSuccess: () -> Unit, onFailure: (Exception) -> Unit) {
+        firestore.collection(collectionName)
+            .add(item)
+            .addOnSuccessListener { onSuccess() }
+            .addOnFailureListener { exception -> onFailure(exception) }
     }
 }
